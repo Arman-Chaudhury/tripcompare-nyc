@@ -4,9 +4,20 @@
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// All peak / rush / overnight windows are defined in New York local time,
+// regardless of where the device (or a CI runner) thinks it is.
+const NY_TZ = 'America/New_York';
+const nyFmt = new Intl.DateTimeFormat('en-US', { timeZone: NY_TZ, hour: 'numeric', hour12: false, weekday: 'short' });
+const DAY_IDX = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+export function nyClock(date) {
+  const parts = nyFmt.formatToParts(date);
+  const hour = Number(parts.find((p) => p.type === 'hour').value) % 24;
+  const day = DAY_IDX[parts.find((p) => p.type === 'weekday').value];
+  return { hour, day };
+}
+
 export function trafficProfile(date, weather = 'clear') {
-  const hour = date.getHours();
-  const day = date.getDay();
+  const { hour, day } = nyClock(date);
   const weekday = day >= 1 && day <= 5;
 
   let lo, hi, key;
@@ -43,10 +54,9 @@ export function driveRange(freeFlowMin, profile, extraLo = 0, extraHi = 0) {
  *  From the airport the relevant window is arrival in Manhattan, so we use
  *  the departure hour + ~45 min. */
 export function isLirrPeak(date, shiftMin = 45) {
-  const day = date.getDay();
+  const { day } = nyClock(date);
   if (day === 0 || day === 6) return false;
-  const arrival = new Date(date.getTime() + shiftMin * 60 * 1000);
-  const h = arrival.getHours();
+  const { hour: h } = nyClock(new Date(date.getTime() + shiftMin * 60 * 1000));
   return (h >= 6 && h < 10) || (h >= 16 && h < 20);
 }
 
@@ -63,6 +73,7 @@ export function surgeProfile(profile, weather = 'clear') {
 
 export function formatTimeLabel(date, lang = 'en') {
   return date.toLocaleString(lang === 'es' ? 'es-US' : 'en-US', {
+    timeZone: NY_TZ,
     weekday: 'long',
     hour: 'numeric',
     minute: '2-digit',
