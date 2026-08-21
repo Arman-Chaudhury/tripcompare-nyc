@@ -1,0 +1,20 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy the MTA alerts feeds to avoid browser CORS. No backend code — just a rewrite.
+[[redirects]]
+  from = "/api/mta/*"
+  to = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2F:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
