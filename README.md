@@ -31,7 +31,7 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Share button** (Web Share API, clipboard fallback) and a **QR-code view** so a traveler can scan it straight off my phone or a printed card.
 - **English + Spanish** UI, with a tiny i18n object that makes adding a language a one-file change.
 - **Installable PWA**, works fully offline once opened — airports have terrible signal.
-- **Accessibility** — large touch targets (≥44px), one-handed layout, visible focus states, ARIA roles on all controls, WCAG-AA contrast in light and dark mode (follows the system setting), `lang` attribute switches with the language.
+- **Accessibility** — large touch targets (≥44px), one-handed layout, visible focus states, ARIA roles on all controls, WCAG-AA contrast; always uses the light theme, even when the device is in dark mode; the `lang` attribute switches with the language.
 
 ## Cost per mile, cost per minute, and the time-value metric
 

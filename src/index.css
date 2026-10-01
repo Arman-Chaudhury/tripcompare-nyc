@@ -22,17 +22,8 @@
   --promo: #5b3fb0;
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Always light, even when the device is in dark mode. */
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #0b1118; --paper: #121a23; --ink: #e6ebf0; --ink-soft: #c3ccd6; --muted: #8e9aa7;
-    --rule: #26313d; --rule-soft: #1c2530; --navy: #8db8ea; --navy-ink: #06121f; --nav-dim: #9fb1c6;
-    --board: #05090e; --best: #16263a; --verified: #5cc281; --estimate: #e0b04a; --promo: #b3a0f0;
-    color-scheme: dark;
-  }
-  .top { background: #002a52; }
-  .top nav a.on, .mark { color: #fff; }
 }
 
 * { box-sizing: border-box; }
