@@ -7,8 +7,10 @@
 import { airports, destinations, destinationById } from '../data/destinations.js';
 
 export const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-// Bounding box around the NYC metro so "Broadway" means the right Broadway.
-const VIEWBOX = '-74.45,41.05,-73.45,40.45';
+// Bias box (not a hard limit) covering the whole tri-state catchment — all of
+// Long Island and Connecticut, the Hudson Valley, New Jersey, and eastern PA —
+// so "Broadway" means the right Broadway but Stamford and Montauk still match.
+const VIEWBOX = '-75.6,42.2,-71.7,39.4';
 
 export function airportPlace(code) {
   const a = airports[code];
@@ -52,7 +54,9 @@ export function nearest(place, list) {
 // Primary: NYC Planning Labs GeoSearch (Pelias over the city's official
 // address file — understands Queens hyphenated numbers like "41-11 95 St",
 // intersections, and landmarks; keyless, CORS-open, fast autocomplete).
-// Fallback: Nominatim for anything outside the five boroughs (NJ, LI, etc.).
+// Alongside it: Nominatim for everything outside the five boroughs — Long
+// Island, Connecticut, Westchester / Hudson Valley, New Jersey, and beyond.
+// Both run in parallel; NYC matches are listed first, then the rest.
 export const GEOSEARCH = 'https://geosearch.planninglabs.nyc/v2/autocomplete';
 
 export function normalizeQuery(q) {
@@ -88,16 +92,63 @@ function titleCase(s) {
   return s.replace(/\b([A-Z]{2,})\b/g, (w) => (w === 'NY' || w === 'USA' || w === 'NYC' ? w : w[0] + w.slice(1).toLowerCase()));
 }
 
+// Short "name, town ST" label from Nominatim's address parts; the full
+// display_name is kept as the secondary line.
+function nominatimName(r, { preferStreet = false } = {}) {
+  const a = r.address ?? {};
+  const street = [a.house_number, a.road].filter(Boolean).join(' ');
+  const poi = r.name && r.name !== street ? r.name : '';
+  const head = (preferStreet ? street || poi : poi || street) || r.display_name.split(',')[0];
+  const town = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || '';
+  const state = STATE_ABBR[a.state] ?? a.state ?? '';
+  const tail = [town !== head ? town : '', state].filter(Boolean).join(', ');
+  return tail ? `${head}, ${tail}` : head;
+}
+
+const STATE_ABBR = { 'New York': 'NY', 'New Jersey': 'NJ', Connecticut: 'CT', Pennsylvania: 'PA', Massachusetts: 'MA', 'Rhode Island': 'RI', Delaware: 'DE' };
+
+// Nominatim reads a trailing "CT" as "Court" and "PA" as nothing useful, so
+// spell out tri-state postal abbreviations before sending the query.
+const STATE_NAME = Object.fromEntries(Object.entries(STATE_ABBR).map(([name, abbr]) => [abbr, name]));
+function expandStates(q) {
+  return q.replace(/,?\s+(NY|NJ|CT|PA|MA|RI|DE)(?=\s*(,|\d{5}|$))/i, (m, abbr) => `, ${STATE_NAME[abbr.toUpperCase()]}`);
+}
+
+async function nominatim(q, signal) {
+  const params = new URLSearchParams({
+    q: expandStates(q), format: 'jsonv2', addressdetails: '1', limit: '7', countrycodes: 'us', viewbox: VIEWBOX, bounded: '0', dedupe: '1',
+  });
+  const res = await fetch(`${NOMINATIM}?${params}`, { signal, headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`nominatim ${res.status}`);
+  const j = await res.json();
+  return j.map((r) => ({
+    kind: 'custom',
+    id: `osm-${r.osm_type?.[0] ?? ''}${r.osm_id ?? r.place_id}`,
+    name: nominatimName(r),
+    full: r.display_name,
+    lat: +r.lat,
+    lng: +r.lon,
+  }));
+}
+
+// Two same-named hits closer than this are one place (GeoSearch and OSM both
+// know Penn Station; OSM often has the building, the stop, and the entrance).
+const DUPE_MI = 0.2;
+const sameName = (a, b) => a.name.split(',')[0].toLowerCase() === b.name.split(',')[0].toLowerCase();
+
 export async function geocode(query, signal) {
   const q = normalizeQuery(query);
   if (q.length < 2) return [];
-  try {
-    const nyc = await geosearch(q, signal);
-    if (nyc.length) return nyc;
-  } catch (e) {
-    if (e.name === 'AbortError') throw e;
+  const swallow = (e) => { if (e.name === 'AbortError') throw e; return []; };
+  const [nyc, osm] = await Promise.all([
+    geosearch(q, signal).catch(swallow),
+    nominatim(q, signal).catch(swallow),
+  ]);
+  const out = [...nyc];
+  for (const r of osm) {
+    if (!out.some((p) => haversineMiles(p, r) < DUPE_MI && (sameName(p, r) || haversineMiles(p, r) < 0.05))) out.push(r);
   }
-  return nominatim(q, signal);
+  return out.slice(0, 8);
 }
 
 export async function reverseGeocode({ lat, lng }) {
@@ -105,7 +156,14 @@ export async function reverseGeocode({ lat, lng }) {
     const res = await fetch(`https://geosearch.planninglabs.nyc/v2/reverse?point.lat=${lat}&point.lon=${lng}&size=1`);
     const j = await res.json();
     const f = j.features?.[0];
-    if (f) return titleCase(f.properties.label.split(',').slice(0, 2).join(','));
+    // Outside the city GeoSearch degrades to a county/state/country hit; only trust a real NYC address.
+    if (f?.properties.borough) return titleCase(f.properties.label.split(',').slice(0, 2).join(','));
+  } catch { /* fall through */ }
+  try {
+    const params = new URLSearchParams({ lat, lon: lng, format: 'jsonv2', addressdetails: '1', zoom: '18' });
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, { headers: { Accept: 'application/json' } });
+    const r = await res.json();
+    if (r?.display_name) return nominatimName(r, { preferStreet: true });
   } catch { /* fall through */ }
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
