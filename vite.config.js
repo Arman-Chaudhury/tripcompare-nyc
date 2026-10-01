@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'TripCompare NYC',
         short_name: 'TripCompare',
         description: 'Every way from JFK, LGA, and EWR into the city — ranked by cost and time, with verified fares.',
-        theme_color: '#0b5fff',
-        background_color: '#f6f7f9',
+        theme_color: '#003a70',
+        background_color: '#f3f4f6',
         display: 'standalone',
         start_url: BASE,
         scope: BASE,
@@ -36,6 +36,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: `${BASE}index.html`,
         runtimeCaching: [
+          {
+            // IBM Plex from Google Fonts: cached so the board typography survives offline.
+            urlPattern: ({ url }) => url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com',
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts', expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 3600 } },
+          },
           {
             // Map tiles: cache-first so a trip you looked at still renders offline.
             urlPattern: ({ url }) => url.hostname === 'tile.openstreetmap.org',
