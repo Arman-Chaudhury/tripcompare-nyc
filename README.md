@@ -16,7 +16,9 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Route map** — a Leaflet/OpenStreetMap map above every comparison, styled the way navigation apps do it: the selected driving route in blue with a white casing, **alternate routes in gray** (up to three from OSRM, each labeled "via …" with distance and a modeled time range for the chosen departure), and transit itineraries dashed in their official line colors. Pick a route and every car mode's cost and time re-computes from that route's distance. A/B pins; tap a row, card, chip, or line to highlight. Tiles and routes are cached for offline.
 - **Live traffic** — a toggle embeds Waze's live traffic map for the trip area (jams, incidents, closures), plus one-tap **Open in Waze / Apple Maps / Google Maps** links for a live, traffic-aware ETA. The app's own time ranges use the time-of-day model, not live flow — Waze, Apple, and Google don't expose traffic data to third-party sites without paid keys, and the app never pretends otherwise.
 - **Address search that handles NYC** — NYC Planning Labs GeoSearch (the city's own address data) is the primary geocoder, so Queens hyphenated numbers like `41-11 95 St`, intersections, and landmarks resolve on the first try; OpenStreetMap Nominatim covers NJ and beyond. 220 ms debounce, recent places, keyboard navigation, and a "use my location" button.
-- **Comparison table by default** — one row per mode with cost, time, **cost per minute**, and the time-value metric side by side; tap a row for full details. Tabs switch to a card view or the cost-vs-time chart.
+- **Transit-board layout** — a navy tab bar (Getting there · Canceled flight · Airports · Help a passenger; the last three are marked *soon*), a departure-board status strip with the New York clock and live MTA status for the lines on your trip, and one route bar for from/to, departure time, weather, and what your time is worth.
+- **One-sentence answer first** — "AirTrain + LIRR to Penn Station. $14, about 54 min." plus the trade-off against the fastest and cheapest options, computed from the ranked results.
+- **Comparison table** — one row per mode with official-style line bullets, cost (stamped *verified* or *estimate*), time, **cost per minute**, and a *good to know* column (live alert, warning, exact-price link, or top tip). Warnings shared by most rows (JFK construction) appear once above the table. Tap a row for steps, full cost breakdown, time-value math, and commuter projection.
 - **"Leaving now" by default** (device clock), or pick a day and time. This drives LIRR peak/off-peak pricing, the taxi rush-hour and night surcharges, the traffic model, overnight-service warnings, and promo windows.
 - **Ranked cards** sortable by *cheapest*, *fastest*, or *best value* (an adjustable "your time is worth $X/hr" slider).
 - **Time-value metric and cost per minute on every row/card** — see below.
@@ -26,11 +28,10 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Expandable cards** with step-by-step directions, practical tips ("the Q70 is FREE", "buy your CityTicket in the TrainTime app", "AirTrain is paid on exit at Jamaica"), a full cost breakdown, and info notes.
 - **Commuter projection** — weekly / monthly / yearly cost if you did this trip every workday.
 - **CO₂ per trip** for every mode and **calories** for Citi Bike.
-- **Cost-vs-time chart** (Recharts) with error bars showing the full range of each option.
 - **Share button** (Web Share API, clipboard fallback) and a **QR-code view** so a traveler can scan it straight off my phone or a printed card.
 - **English + Spanish** UI, with a tiny i18n object that makes adding a language a one-file change.
 - **Installable PWA**, works fully offline once opened — airports have terrible signal.
-- **Accessibility** — large touch targets (≥44px), one-handed layout, visible focus states, ARIA roles on all controls, WCAG-AA contrast in light and dark mode, `lang` attribute switches with the language.
+- **Accessibility** — large touch targets (≥44px), one-handed layout, visible focus states, ARIA roles on all controls, WCAG-AA contrast in light and dark mode (follows the system setting), `lang` attribute switches with the language.
 
 ## Cost per mile, cost per minute, and the time-value metric
 
@@ -85,7 +86,6 @@ Badges on every card: **Verified fare** (green), **Estimate** (amber), **Live al
 
 - [Vite](https://vitejs.dev) + [React](https://react.dev) — single-page app, no router needed
 - [`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/) (Workbox) — manifest, service worker, precached app shell (which includes all fare data), network-first cache for MTA alerts
-- [Recharts](https://recharts.org) — cost-vs-time scatter with error bars
 - [lucide-react](https://lucide.dev) — icons
 - [`qrcode.react`](https://github.com/zpao/qrcode.react) — QR code view
 - Plain CSS with custom properties — deliberately plain: white ground, one navy accent, tabular numerals
@@ -139,7 +139,7 @@ src/
   lib/timeValue.js       $/hr-saved metric, sorting, commuter projection
   lib/alerts.js          MTA GTFS-RT alerts fetch/parse/cache, per-line status
   lib/i18n.js            en + es strings
-  components/            TripSelector + PlacePicker, TimeSelector, RouteMap, CompareTable, ResultCard, CompareChart, ShareQR
+  components/            StatusBoard, RouteBar + PlacePicker, Verdict, CompareTable, ResultCard, RouteMap, ShareQR
 scripts/sanity.mjs       route-math checks (npm run check)
 ```
 
