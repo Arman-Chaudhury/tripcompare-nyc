@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FARES_LAST_VERIFIED, fareSources } from './data/fares.js';
-import { makeT, languages } from './lib/i18n.js';
+import { makeT, languages, detectLanguage } from './lib/i18n.js';
 import { useAlerts } from './hooks/useAlerts.js';
 import TransitTab from './tabs/TransitTab.jsx';
 import AssistTab from './tabs/AssistTab.jsx';
@@ -22,7 +22,7 @@ function readInitial() {
   try { stored = localStorage.getItem('tc.lang'); } catch { /* storage blocked */ }
   return {
     tab: TABS.some((x) => x.id === p.get('tab')) ? p.get('tab') : 'transit',
-    lang: p.get('lang') === 'es' ? 'es' : (stored ?? (navigator.language.startsWith('es') ? 'es' : 'en')),
+    lang: detectLanguage(p.get('lang'), stored),
     trip: Object.fromEntries(TRIP_KEYS.filter((k) => p.get(k)).map((k) => [k, p.get(k)])),
   };
 }

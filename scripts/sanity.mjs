@@ -1,6 +1,5 @@
 // Route-math sanity checks from the spec. Run: npm run check
 import { getFare, fares } from '../src/data/fares.js';
-import { destinationById } from '../src/data/destinations.js';
 import { buildOptions } from '../src/lib/options.js';
 import { annotateTimeValue } from '../src/lib/timeValue.js';
 import { airportPlace, presetPlace } from '../src/lib/geo.js';
@@ -78,6 +77,50 @@ import { applyNeed, needToQuery, needFromQuery, carsForParty } from '../src/lib/
   const back = needFromQuery({ need: 'group', party: '3' });
   if (back.need !== 'group' || back.party !== 3) { fail++; console.log('FAIL needFromQuery', back); }
   if (needFromQuery({ need: 'bogus' }).need !== null) { fail++; console.log('FAIL unknown need must be ignored'); }
+}
+
+// Route-text translation coverage: every string the engine can emit, for every
+// trip and time of day, must have an entry (exact or template) in each dictionary.
+import { tx, hasTranslation, routeTextLanguages, localizeOption } from '../src/lib/routeText.js';
+import { strings } from '../src/lib/i18n.js';
+{
+  const custom = { kind: 'custom', id: 'x', name: '1560 Broadway', lat: 40.758, lng: -73.9855 };
+  const farAway = { kind: 'custom', id: 'y', name: 'Yonkers', lat: 40.93, lng: -73.90 };
+  const nearJfk = { kind: 'custom', id: 'z', name: 'Rosedale', lat: 40.6627, lng: -73.7355 };
+  const times = ['2026-10-15T14:00', '2026-10-15T08:00', '2026-10-15T17:30', '2026-10-16T02:00', '2026-10-17T13:00', '2026-08-20T14:00'].map((d) => new Date(`${d}:00-04:00`));
+  const trips = [];
+  for (const ap of Object.keys(airports)) for (const d of destinations) trips.push([airportPlace(ap), presetPlace(d.id)], [presetPlace(d.id), airportPlace(ap)]);
+  trips.push([airportPlace('JFK'), custom], [farAway, presetPlace('midtown')], [airportPlace('LGA'), farAway], [airportPlace('JFK'), airportPlace('LGA')], [nearJfk, presetPlace('midtown')], [presetPlace('midtown'), nearJfk]);
+  const emitted = new Set();
+  for (const [o, d] of trips) for (const date of times) for (const weather of ['clear', 'rain']) {
+    const { options, trip } = buildOptions({ origin: o, destination: d, date, weather });
+    trip.notes.forEach((n) => emitted.add(n));
+    const withGroup = [...options, ...applyNeed(options, { need: 'group', party: 5 }).options, ...applyNeed(options, { need: 'group', party: 2 }).options];
+    for (const x of withGroup) {
+      emitted.add(x.name); x.steps?.forEach((v) => emitted.add(v)); x.tips?.forEach((v) => emitted.add(v));
+      x.warnings.forEach((w) => emitted.add(w.text)); x.breakdown.forEach((b) => emitted.add(b.label)); if (x.promo) emitted.add(x.promo.label);
+    }
+  }
+  for (const lang of routeTextLanguages) {
+    const missing = [...emitted].filter((s) => !hasTranslation(lang, s));
+    if (missing.length) { fail++; console.log(`FAIL ${lang} route text: ${missing.length} untranslated string(s):`); missing.forEach((m) => console.log(`   ${JSON.stringify(m)}`)); }
+    else console.log(`PASS ${lang} route text covers all ${emitted.size} engine strings`);
+    const unresolved = [...emitted].map((s) => tx(lang, s)).filter((s) => /\{\w+\}/.test(s));
+    if (unresolved.length) { fail++; console.log(`FAIL ${lang} leaves placeholders: ${unresolved.slice(0, 3).join(' | ')}`); }
+  }
+  eq('template: meter label substitutes miles', tx('es', 'Meter: $3.00 + $0.70 × ⅕ mi (13.8 mi)').includes('13.8') ? 1 : 0, 1);
+  eq('template: surge label translated inside breakdown', tx('es', 'Demand multiplier (highDemand)').includes('alta demanda') ? 1 : 0, 1);
+  eq('unknown strings pass through', tx('zh', 'Some brand-new tip') === 'Some brand-new tip' ? 1 : 0, 1);
+  const base = buildOptions({ origin: airportPlace('JFK'), destination: presetPlace('midtown'), date: offPromo }).options;
+  const zhTaxi = localizeOption(find(base, 'taxi'), 'zh');
+  eq('localizeOption keeps numbers', zhTaxi.cost[0], find(base, 'taxi').cost[0]);
+  if (zhTaxi.name !== '黄色出租车') { fail++; console.log('FAIL zh taxi name', zhTaxi.name); }
+  // UI string tables: every language has every English key.
+  for (const [lang, table] of Object.entries(strings)) {
+    const missing = Object.keys(strings.en).filter((k) => !(k in table));
+    const extra = Object.keys(table).filter((k) => !(k in strings.en));
+    if (missing.length || extra.length) { fail++; console.log(`FAIL ui strings ${lang}: missing ${missing.join(',')} extra ${extra.join(',')}`); }
+  }
 }
 
 console.log(fail ? `\n${fail} failure(s)` : '\nAll sanity checks passed.');

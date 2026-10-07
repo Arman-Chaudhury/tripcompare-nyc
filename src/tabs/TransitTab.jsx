@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { buildOptions } from '../lib/options.js';
 import { annotateTimeValue, sortOptions, DEFAULT_VALUE_OF_TIME } from '../lib/timeValue.js';
-import { formatTimeLabel } from '../lib/traffic.js';
+import { formatTimeLabel, formatDayTime } from '../lib/traffic.js';
+import { localizeOptions, localizeNotes } from '../lib/routeText.js';
 import { airportPlace, presetPlace, placeFromParam, placeToParam } from '../lib/geo.js';
 import { applyNeed, needFromQuery } from '../lib/assist.js';
 import { boardLinesFor } from '../lib/alerts.js';
@@ -62,9 +63,9 @@ export default function TransitTab({ alerts, lang, t, params, setParams }) {
   const onRoutesLoaded = (rs) => { setRoutes(rs); setRouteIndex(0); };
   const needed = useMemo(() => applyNeed(options, { need, party }), [options, need, party]);
   const annotated = useMemo(() => annotateTimeValue(needed.options, valueOfTime), [needed, valueOfTime]);
-  const sorted = useMemo(() => sortOptions(annotated, sort), [annotated, sort]);
+  const sorted = useMemo(() => localizeOptions(sortOptions(annotated, sort), lang), [annotated, sort, lang]);
   const boardLines = useMemo(() => boardLinesFor(sorted), [sorted]);
-  const notes = [...trip.notes, ...needed.notes.map((n) => t(n.key, n.vars))];
+  const notes = [...localizeNotes(trip.notes, lang), ...needed.notes.map((n) => t(n.key, n.vars))];
   const now = new Date();
   const best = sorted[0];
   const bestTip = best?.tips?.find((x) => x !== (best.warnings.find((w) => w.level === 'warn')?.text ?? best.tips?.[0]));
@@ -97,7 +98,7 @@ export default function TransitTab({ alerts, lang, t, params, setParams }) {
               </div>
             </div>
             {sorted.length > 0 && <CompareTable options={sorted} alerts={alerts.data} bestId={best?.id} t={t} lang={lang} selectedId={selectedId} onSelect={setSelectedId} />}
-            <p className="muted tiny" style={{ marginTop: 8 }}>{t('assumes', { label: t(`traffic${cap(profile.key)}`), day: profile.dayName, time: formatTimeLabel(useNow ? now : customDate, lang).split(' ').slice(-2).join(' ') })}</p>
+            <p className="muted tiny" style={{ marginTop: 8 }}>{t('assumes', { label: t(`traffic${cap(profile.key)}`), ...formatDayTime(useNow ? now : customDate, lang) })}</p>
           </section>
 
           <aside className="side">

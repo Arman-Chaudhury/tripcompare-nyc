@@ -3,6 +3,7 @@ import { Train, Car, Bus, Bike, Smartphone, CarFront, Plane, ChevronDown, Chevro
 import { statusForLines } from '../lib/alerts.js';
 import { commuterProjection, fmtMoney, fmtRange, fmtMin } from '../lib/timeValue.js';
 import StatusDot from './StatusDot.jsx';
+import { localeFor } from '../lib/i18n.js';
 
 const ICONS = { transit: Train, taxi: Car, rideshare: Smartphone, shuttle: Bus, bike: Bike, carservice: CarFront, air: Plane };
 
@@ -34,8 +35,8 @@ export default function ResultCard({ o, alerts, isBestValue, t, lang, embedded =
   const status = o.kind === 'transit' ? statusForLines(o.lines, alerts) : null;
   const statusLabel = status ? t(`status${status.color[0].toUpperCase()}${status.color.slice(1)}`) : '';
   const proj = commuterProjection(o.costMid);
-  const money = (n) => `$${Math.round(n).toLocaleString(lang === 'es' ? 'es-US' : 'en-US')}`;
-  const promoEnd = o.promo ? new Date(o.promo.end).toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { month: 'short', day: 'numeric' }) : null;
+  const money = (n) => `$${Math.round(n).toLocaleString(localeFor(lang))}`;
+  const promoEnd = o.promo ? new Date(o.promo.end).toLocaleDateString(localeFor(lang), { month: 'short', day: 'numeric' }) : null;
 
   return (
     <article className={`card kind-${o.kind} ${embedded ? 'embedded' : ''}`}>

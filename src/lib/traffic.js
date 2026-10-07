@@ -2,6 +2,8 @@
 // drive minutes and are deliberately wide ranges — we never show a single
 // number for a car trip.
 
+import { localeFor } from './i18n.js';
+
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // All peak / rush / overnight windows are defined in New York local time,
@@ -72,10 +74,19 @@ export function surgeProfile(profile, weather = 'clear') {
 }
 
 export function formatTimeLabel(date, lang = 'en') {
-  return date.toLocaleString(lang === 'es' ? 'es-US' : 'en-US', {
+  return date.toLocaleString(localeFor(lang), {
     timeZone: NY_TZ,
     weekday: 'long',
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+/** Weekday and clock time as separate localized strings (for "assumes … traffic (Wed 5:12 PM)"). */
+export function formatDayTime(date, lang = 'en') {
+  const loc = localeFor(lang);
+  return {
+    day: date.toLocaleString(loc, { timeZone: NY_TZ, weekday: 'long' }),
+    time: date.toLocaleString(loc, { timeZone: NY_TZ, hour: 'numeric', minute: '2-digit' }),
+  };
 }

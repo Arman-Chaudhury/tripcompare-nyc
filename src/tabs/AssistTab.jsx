@@ -5,7 +5,8 @@ import { airports } from '../data/destinations.js';
 import { buildOptions } from '../lib/options.js';
 import { annotateTimeValue, sortOptions, DEFAULT_VALUE_OF_TIME, fmtRange, fmtMin } from '../lib/timeValue.js';
 import { airportPlace, presetPlace, placeFromParam, placeToParam } from '../lib/geo.js';
-import { makeT, languages } from '../lib/i18n.js';
+import { makeT, languages, localeFor } from '../lib/i18n.js';
+import { localizeOptions, localizeNotes } from '../lib/routeText.js';
 import { NEEDS, MIN_PARTY, MAX_PARTY, applyNeed, needToQuery, needFromQuery, normalizeParty } from '../lib/assist.js';
 import { boardLinesFor } from '../lib/alerts.js';
 import StatusBoard from '../components/StatusBoard.jsx';
@@ -29,7 +30,7 @@ function writeStore(v) {
 }
 
 function nyClock(date, lang) {
-  return new Intl.DateTimeFormat(lang === 'es' ? 'es-US' : 'en-US', { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
+  return new Intl.DateTimeFormat(localeFor(lang), { timeZone: 'America/New_York', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
 }
 
 export default function AssistTab({ alerts, lang, t, params, setParams, openTransit }) {
@@ -70,9 +71,10 @@ export default function AssistTab({ alerts, lang, t, params, setParams, openTran
   const now = new Date();
   const { options, trip } = useMemo(() => buildOptions({ origin, destination, date: new Date() }), [origin, destination, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const needed = useMemo(() => applyNeed(options, { need, party }), [options, need, party]);
-  const sorted = useMemo(() => sortOptions(annotateTimeValue(needed.options, DEFAULT_VALUE_OF_TIME), query.sort), [needed, query.sort]);
   const th = useMemo(() => makeT(handLang), [handLang]);
-  const notes = [...trip.notes, ...needed.notes.map((n) => th(n.key, n.vars))];
+  // The handout is in the passenger's language: route names, steps, and tips included.
+  const sorted = useMemo(() => localizeOptions(sortOptions(annotateTimeValue(needed.options, DEFAULT_VALUE_OF_TIME), query.sort), handLang), [needed, query.sort, handLang]);
+  const notes = [...localizeNotes(trip.notes, handLang), ...needed.notes.map((n) => th(n.key, n.vars))];
   const best = sorted[0];
   const tip = best?.tips?.find((x) => x !== best.warnings.find((w) => w.level === 'warn')?.text) ?? best?.tips?.[0];
   const url = `${PUBLIC_URL.replace(/\/?$/, '/')}?${new URLSearchParams({ ...query, lang: handLang })}`;

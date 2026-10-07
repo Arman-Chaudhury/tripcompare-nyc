@@ -1,11 +1,12 @@
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { statusForLines } from '../lib/alerts.js';
+import { localeFor } from '../lib/i18n.js';
 
 // Departure-board strip: New York clock + live MTA status for the lines on
 // this trip. Everything here is either the device clock or the live feed —
 // no weather or AirTrain status is shown because neither has a free feed.
 function nyClock(date, lang) {
-  const fmt = new Intl.DateTimeFormat(lang === 'es' ? 'es-US' : 'en-US', { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  const fmt = new Intl.DateTimeFormat(localeFor(lang), { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: '2-digit' });
   return fmt.format(date).toUpperCase();
 }
 

@@ -30,7 +30,7 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Commuter projection** — weekly / monthly / yearly cost if you did this trip every workday.
 - **CO₂ per trip** for every mode and **calories** for Citi Bike.
 - **Share button** (Web Share API, clipboard fallback) and a **QR-code view** so a traveler can scan it straight off my phone or a printed card.
-- **English + Spanish** UI, with a tiny i18n object that makes adding a language a one-file change.
+- **English, Spanish, and Chinese** — the UI strings live in one i18n object, and route content (option names, step-by-step directions, tips, warnings, cost-breakdown labels) is translated through a per-language dictionary keyed by the English text, so the data files stay English and `npm run check` fails if any string the engine can emit lacks a translation. Line letters, station names, and app names stay in English on purpose: they have to match the signs. The Help-a-passenger handout is fully in the passenger's language.
 - **Installable PWA**, works fully offline once opened — airports have terrible signal.
 - **Accessibility** — large touch targets (≥44px), one-handed layout, visible focus states, ARIA roles on all controls, WCAG-AA contrast; always uses the light theme, even when the device is in dark mode; the `lang` attribute switches with the language.
 
@@ -133,6 +133,7 @@ Both `vercel.json` and `netlify.toml` are included: SPA fallback, the MTA alerts
 ```
 src/
   data/fares.js          every fare: amount, lastVerified, source, optional promo window
+  data/routeText/        per-language dictionaries for route content, keyed by the English string
   data/destinations.js   airports, 14 destinations, transit itineraries per airport
   lib/geo.js             places, Nominatim geocoding, haversine / road-distance estimates
   lib/traffic.js         time-of-day traffic multipliers, LIRR peak rule, surge profile
@@ -140,7 +141,8 @@ src/
   lib/timeValue.js       $/hr-saved metric, sorting, commuter projection
   lib/alerts.js          MTA GTFS-RT alerts fetch/parse/cache, per-line status
   lib/assist.js          passenger needs → filter/sort/group scaling, URL contract for the handout link
-  lib/i18n.js            en + es strings
+  lib/i18n.js            en + es + zh UI strings, locale helpers
+  lib/routeText.js       translates engine output (names, steps, tips, warnings, labels) via data/routeText/{es,zh}.js
   components/            StatusBoard, RouteBar + PlacePicker, Verdict, CompareTable, ResultCard, RouteMap, ShareQR
   tabs/                  TransitTab (Getting there), AssistTab (Help a passenger), ComingSoonTab
 scripts/sanity.mjs       route-math checks (npm run check)
@@ -175,7 +177,7 @@ Notes: NYC Ferry is in the fare table but no ferry serves an airport directly, s
 
 - **Rideshare price partnerships** — if Uber/Lyft ever expose a price-estimate endpoint again (or an airport partnership makes one available), swap the estimate range for a genuine live quote without changing the UI contract.
 - **GTFS trip-time routing** — replace hand-curated transit time ranges with real schedule-based routing (MTA GTFS static + GTFS-RT trip updates) so overnight and weekend service patterns are computed, not annotated.
-- **More languages** — Chinese, Haitian Creole, Bengali, Russian, Korean reflect who actually walks through JFK; the i18n layer is ready, the strings aren't written yet. Route tips are English-only today.
+- **More languages** — Haitian Creole, Bengali, Russian, Korean reflect who actually walks through JFK. Adding one is a UI table in `src/lib/i18n.js` plus a route dictionary in `src/data/routeText/`; the coverage check lists every string that still needs translating. The Spanish and Chinese dictionaries were written with machine help and should be read by a native speaker.
 - **Bus alerts + PATH/NJ Transit alerts** — currently only subway and LIRR feeds are consumed.
 - **Weather from an API** instead of a manual toggle.
 - **Cross-street search** ("23rd St & 8th Ave") — neither free geocoder resolves intersections today; NYC's Geoclient API does but needs a key.

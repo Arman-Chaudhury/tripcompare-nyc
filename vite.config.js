@@ -6,6 +6,10 @@ const BASE = process.env.VITE_BASE ?? '/';
 
 export default defineConfig({
   base: BASE,
+  // One chunk on purpose: the app is an offline-first PWA that precaches the
+  // whole shell. The route-text dictionaries (es, zh) add ~60 KB raw, which
+  // pushes the main chunk past Vite's default 500 KB advisory.
+  build: { chunkSizeWarningLimit: 650 },
   plugins: [
     react(),
     VitePWA({
