@@ -3,15 +3,18 @@ import { FARES_LAST_VERIFIED, fareSources } from './data/fares.js';
 import { makeT, languages } from './lib/i18n.js';
 import { useAlerts } from './hooks/useAlerts.js';
 import TransitTab from './tabs/TransitTab.jsx';
+import AssistTab from './tabs/AssistTab.jsx';
 import ComingSoonTab from './tabs/ComingSoonTab.jsx';
 import StatusBoard from './components/StatusBoard.jsx';
 
 const TABS = [
   { id: 'transit', key: 'tabTransit' },
+  { id: 'assist', key: 'tabAssist' },
   { id: 'rebook', key: 'tabRebook', soon: true },
   { id: 'airports', key: 'tabAirports', soon: true },
-  { id: 'assist', key: 'tabAssist', soon: true },
 ];
+// Trip state shared by the tabs and mirrored into the URL.
+const TRIP_KEYS = ['from', 'to', 'sort', 'need', 'party'];
 
 function readInitial() {
   const p = new URLSearchParams(window.location.search);
@@ -20,6 +23,7 @@ function readInitial() {
   return {
     tab: TABS.some((x) => x.id === p.get('tab')) ? p.get('tab') : 'transit',
     lang: p.get('lang') === 'es' ? 'es' : (stored ?? (navigator.language.startsWith('es') ? 'es' : 'en')),
+    trip: Object.fromEntries(TRIP_KEYS.filter((k) => p.get(k)).map((k) => [k, p.get(k)])),
   };
 }
 
@@ -27,10 +31,7 @@ export default function App() {
   const init = useMemo(() => readInitial(), []);
   const [tab, setTab] = useState(init.tab);
   const [lang, setLang] = useState(init.lang);
-  const [tripParams, setTripParams] = useState(() => {
-    const p = new URLSearchParams(window.location.search);
-    return Object.fromEntries(['from', 'to'].filter((k) => p.get(k)).map((k) => [k, p.get(k)]));
-  });
+  const [tripParams, setTripParams] = useState(init.trip);
   const alerts = useAlerts();
   const t = useMemo(() => makeT(lang), [lang]);
 
@@ -43,6 +44,9 @@ export default function App() {
     if (tab !== 'transit') p.set('tab', tab);
     window.history.replaceState(null, '', `?${p}`);
   }, [tab, tripParams, lang]);
+
+  // From Help a passenger: open the full comparison for the handed-over trip.
+  const openTransit = (params) => { setTripParams(params); setTab('transit'); };
 
   return (
     <div className="app">
@@ -65,9 +69,9 @@ export default function App() {
         </div>
       </header>
 
-      {tab === 'transit' ? (
-        <TransitTab alerts={alerts} lang={lang} t={t} setParams={setTripParams} />
-      ) : (
+      {tab === 'transit' && <TransitTab alerts={alerts} lang={lang} t={t} params={tripParams} setParams={setTripParams} />}
+      {tab === 'assist' && <AssistTab alerts={alerts} lang={lang} t={t} params={tripParams} setParams={setTripParams} openTransit={openTransit} />}
+      {tab !== 'transit' && tab !== 'assist' && (
         <>
           <StatusBoard date={new Date()} lines={['E', 'A', 'LIRR']} alerts={alerts} lang={lang} t={t} />
           <ComingSoonTab tab={tab} t={t} onBack={() => setTab('transit')} />

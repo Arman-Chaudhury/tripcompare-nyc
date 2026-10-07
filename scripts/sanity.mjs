@@ -60,5 +60,25 @@ for (const ap of Object.keys(airports))
       for (const k of o.fareKeys ?? []) if (!fares[k]) { fail++; console.log(`FAIL unknown fare ${k}`); }
     }
   }
+// Help-a-passenger needs: group totals and luggage/mobility filters.
+import { applyNeed, needToQuery, needFromQuery, carsForParty } from '../src/lib/assist.js';
+{
+  const base = buildOptions({ origin: airportPlace('JFK'), destination: presetPlace('midtown'), date: offPromo }).options;
+  const g5 = applyNeed(base, { need: 'group', party: 5 }).options;
+  eq('group of 5: taxi × 2 cars', find(g5, 'taxi').cost[0], find(base, 'taxi').cost[0] * 2);
+  eq('group of 5: AirTrain+E × 5 seats', find(g5, 'jfk-airtrain-e').cost[0], +(find(base, 'jfk-airtrain-e').cost[0] * 5).toFixed(2));
+  eq('group of 5: time unchanged', find(g5, 'taxi').time[1], find(base, 'taxi').time[1]);
+  eq('cars for 4 / 5 / 8', carsForParty(4) * 100 + carsForParty(5) * 10 + carsForParty(8), 122);
+  const lga = buildOptions({ origin: airportPlace('LGA'), destination: presetPlace('astoria'), date: offPromo }).options;
+  if (!find(lga, 'citibike')) { fail++; console.log('FAIL LGA→Astoria should offer Citi Bike'); }
+  for (const need of ['luggage', 'mobility', 'group']) if (find(applyNeed(lga, { need, party: 2 }).options, 'citibike')) { fail++; console.log(`FAIL ${need} should drop Citi Bike`); }
+  if (applyNeed(lga, { need: 'cheapest' }).options !== lga) { fail++; console.log('FAIL non-filter need must pass options through'); }
+  const q = needToQuery('group', 12);
+  if (q.party !== '8' || q.sort !== 'value') { fail++; console.log('FAIL group query', q); }
+  const back = needFromQuery({ need: 'group', party: '3' });
+  if (back.need !== 'group' || back.party !== 3) { fail++; console.log('FAIL needFromQuery', back); }
+  if (needFromQuery({ need: 'bogus' }).need !== null) { fail++; console.log('FAIL unknown need must be ignored'); }
+}
+
 console.log(fail ? `\n${fail} failure(s)` : '\nAll sanity checks passed.');
 process.exit(fail ? 1 : 0);

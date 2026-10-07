@@ -6,7 +6,7 @@ import ResultCard from './ResultCard.jsx';
 
 const KIND_BADGE = { taxi: 'TAXI', shuttle: 'VAN', carservice: 'CAR', air: 'HELI', bike: 'BIKE' };
 
-function Badges({ o }) {
+export function Badges({ o }) {
   const out = [];
   if (/airtrain/i.test(o.name)) out.push(<span key="at" className="bullet sq k-airtrain">AT</span>);
   for (const l of o.lines) out.push(<span key={l} className={`bullet line-${l}`}>{l}</span>);

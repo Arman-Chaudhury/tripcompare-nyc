@@ -123,3 +123,10 @@ export function statusForLines(lines, alerts) {
   const color = items.some((i) => i.severity === 'red') ? 'red' : items.length ? 'yellow' : 'green';
   return { color, items };
 }
+
+const DEFAULT_BOARD_LINES = ['E', 'A', 'LIRR'];
+/** Subway letters/numbers and LIRR used by the transit options on a trip, for the status board. */
+export function boardLinesFor(options) {
+  const ls = [...new Set(options.filter((o) => o.kind === 'transit').flatMap((o) => o.lines))].filter((l) => /^[A-Z0-9]$|^LIRR$/.test(l));
+  return ls.length ? ls : DEFAULT_BOARD_LINES;
+}

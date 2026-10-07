@@ -16,7 +16,8 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Route map** — a Leaflet/OpenStreetMap map above every comparison, styled the way navigation apps do it: the selected driving route in blue with a white casing, **alternate routes in gray** (up to three from OSRM, each labeled "via …" with distance and a modeled time range for the chosen departure), and transit itineraries dashed in their official line colors. Pick a route and every car mode's cost and time re-computes from that route's distance. A/B pins; tap a row, card, chip, or line to highlight. Tiles and routes are cached for offline.
 - **Live traffic** — a toggle embeds Waze's live traffic map for the trip area (jams, incidents, closures), plus one-tap **Open in Waze / Apple Maps / Google Maps** links for a live, traffic-aware ETA. The app's own time ranges use the time-of-day model, not live flow — Waze, Apple, and Google don't expose traffic data to third-party sites without paid keys, and the app never pretends otherwise.
 - **Address search that handles NYC** — NYC Planning Labs GeoSearch (the city's own address data) is the primary geocoder, so Queens hyphenated numbers like `41-11 95 St`, intersections, and landmarks resolve on the first try; OpenStreetMap Nominatim covers NJ and beyond. 220 ms debounce, recent places, keyboard navigation, and a "use my location" button.
-- **Transit-board layout** — a navy tab bar (Getting there · Canceled flight · Airports · Help a passenger; the last three are marked *soon*), a departure-board status strip with the New York clock and live MTA status for the lines on your trip, and one route bar for from/to, departure time, weather, and what your time is worth.
+- **Transit-board layout** — a navy tab bar (Getting there · Help a passenger · Canceled flight · Airports; the last two are marked *soon*), a departure-board status strip with the New York clock and live MTA status for the lines on your trip, and one route bar for from/to, departure time, weather, and what your time is worth.
+- **Help a passenger** — a one-screen view for the information desk. Pick what the traveler needs (cheapest, fastest, lots of luggage, traveling as a group, wheelchair / limited mobility), pick the airport and direction (remembered between shifts) and the other end of the trip, and choose the handout language. The right side is a printable handout: the one-sentence answer, the top three options with cost and time, the key tip, and a QR code that opens the full comparison on the passenger's phone with the same filter and language. Group totals multiply per-seat fares by the party and cabs by how many 4-seat cars the party needs; luggage and mobility drop bikes and add elevator / accessible-taxi notes. The link carries `sort`, `need`, and `party`, so Getting there reproduces the staff member's answer and shows a clearable filter chip.
 - **One-sentence answer first** — "AirTrain + LIRR to Penn Station. $14, about 54 min." plus the trade-off against the fastest and cheapest options, computed from the ranked results.
 - **Comparison table** — one row per mode with official-style line bullets, cost (stamped *verified* or *estimate*), time, **cost per minute**, and a *good to know* column (live alert, warning, exact-price link, or top tip). Warnings shared by most rows (JFK construction) appear once above the table. Tap a row for steps, full cost breakdown, time-value math, and commuter projection.
 - **"Leaving now" by default** (device clock), or pick a day and time. This drives LIRR peak/off-peak pricing, the taxi rush-hour and night surcharges, the traffic model, overnight-service warnings, and promo windows.
@@ -138,8 +139,10 @@ src/
   lib/options.js         builds every option for (airport, destination, time, weather)
   lib/timeValue.js       $/hr-saved metric, sorting, commuter projection
   lib/alerts.js          MTA GTFS-RT alerts fetch/parse/cache, per-line status
+  lib/assist.js          passenger needs → filter/sort/group scaling, URL contract for the handout link
   lib/i18n.js            en + es strings
   components/            StatusBoard, RouteBar + PlacePicker, Verdict, CompareTable, ResultCard, RouteMap, ShareQR
+  tabs/                  TransitTab (Getting there), AssistTab (Help a passenger), ComingSoonTab
 scripts/sanity.mjs       route-math checks (npm run check)
 ```
 
@@ -177,7 +180,7 @@ Notes: NYC Ferry is in the fare table but no ferry serves an airport directly, s
 - **Weather from an API** instead of a manual toggle.
 - **Cross-street search** ("23rd St & 8th Ave") — neither free geocoder resolves intersections today; NYC's Geoclient API does but needs a key.
 - **Self-hosted routing** (OSRM/Valhalla) and transit geometry from GTFS shapes so transit lines follow the actual tracks instead of station-to-station segments.
-- **Printable QR card** for the information desk.
+- **Canceled flight and Airports tabs** — need a flight-status source; the passenger-rights summary can be written from DOT rules without one.
 - **React Native** if usage justifies a native app; the data and model layers are plain JS and would port unchanged.
 
 ## Disclaimer

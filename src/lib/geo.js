@@ -23,6 +23,22 @@ export function presetPlace(id) {
 export const presetPlaces = () => destinations.map((d) => presetPlace(d.id));
 export const airportPlaces = () => Object.keys(airports).map(airportPlace);
 
+// URL form of a place: an airport code, a preset id, or "lat,lng,name" for a
+// custom address. Shared by every tab so links reproduce the same trip.
+export function placeFromParam(v, fallback) {
+  if (!v) return fallback;
+  if (airports[v]) return airportPlace(v);
+  if (destinationById[v]) return presetPlace(v);
+  const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(.*))?$/.exec(v);
+  if (m) {
+    let name = `${m[1]}, ${m[2]}`;
+    if (m[3]) { try { name = decodeURIComponent(m[3]); } catch { name = m[3]; } }
+    return { kind: 'custom', id: `pt-${m[1]},${m[2]}`, name, lat: +m[1], lng: +m[2] };
+  }
+  return fallback;
+}
+export const placeToParam = (p) => (p.kind === 'custom' ? `${p.lat.toFixed(5)},${p.lng.toFixed(5)},${encodeURIComponent(p.name)}` : p.id);
+
 export function haversineMiles(a, b) {
   const R = 3958.8;
   const toRad = (x) => (x * Math.PI) / 180;
