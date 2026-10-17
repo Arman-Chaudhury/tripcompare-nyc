@@ -238,10 +238,89 @@ button, select, input { font: inherit; color: inherit; }
 .qr-wrap { background: #fff; display: inline-block; margin: 8px 0; }
 .url { word-break: break-all; font-family: var(--mono); font-size: 12px; }
 
-/* ─── Placeholder tabs ─── */
-.soon-panel { background: var(--paper); border: 1px solid var(--rule); border-left: 5px solid var(--navy); padding: 18px 20px; max-width: 720px; }
-.soon-panel h1 { margin: 0 0 6px; font-size: 22px; }
-.soon-panel p { margin: 6px 0; color: var(--ink-soft); }
+/* ─── Canceled flight ─── */
+.rebook { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: 'form rights' 'alt alt' 'stay stay'; gap: 18px; align-items: start; }
+.rb-form { grid-area: form; background: var(--paper); border: 1px solid var(--rule); padding: 16px 18px 18px; }
+.rb-form h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.015em; }
+.rb-form > .muted { margin: 0 0 14px; font-size: 13.5px; }
+.rb-form h2.label { margin: 16px 0 8px; padding-top: 14px; border-top: 1px solid var(--rule-soft); }
+.causes { grid-template-columns: 1fr; }
+.rb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.rb-grid .tiny { margin: 3px 0 0; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; font-size: 14px; }
+.check input { width: 18px; height: 18px; margin: 0; accent-color: var(--navy); }
+.rights { grid-area: rights; background: var(--paper); border: 1px solid var(--rule); border-left: 5px solid var(--navy); padding: 15px 18px 16px; }
+.rights .k { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.rights h2 { margin: 4px 0 10px; font-size: 23px; line-height: 1.2; letter-spacing: -0.015em; }
+.rights h3.label { margin: 16px 0 6px; }
+.rights-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.rights-list li { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.rights-list li > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rights-list b { font-weight: 600; }
+.rights-list .r-no b { color: var(--muted); font-weight: 500; }
+.rights-list .r-no .sub, .rights-list .r-maybe .sub { color: var(--muted); }
+.mark-yes, .mark-maybe, .mark-no { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none; margin-top: 1px; color: #fff; }
+.mark-yes { background: var(--ok); }
+.mark-maybe { background: var(--warn); color: #111; }
+.mark-no { background: var(--rule); color: var(--muted); }
+.rights .notes { margin-top: 10px; font-size: 13px; color: var(--ink-soft); }
+.rights .notes p { margin: 0 0 6px; padding: 7px 10px; border-left: 3px solid var(--warn); background: var(--ground); }
+.script { margin: 0; padding: 10px 13px; background: var(--best); border-left: 3px solid var(--navy); font-size: 14px; line-height: 1.5; }
+.todo { margin: 0; padding-left: 20px; font-size: 13.5px; }
+.todo li { margin: 4px 0; }
+.sources-line { margin: 12px 0 0; }
+.sources-line a { white-space: nowrap; }
+.sources-line svg { vertical-align: -1px; }
+.rb-alt { grid-area: alt; }
+.rb-stay { grid-area: stay; }
+.rb-alt h2, .rb-stay h2, .airports h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 18px; letter-spacing: -0.01em; }
+.rb-alt > .muted, .rb-stay > .muted { margin: 0 0 10px; font-size: 13.5px; }
+.alt-table td .sub, .ap-table td .sub { display: block; }
+.alt-table .btn { min-height: 34px; padding: 4px 10px; font-size: 13px; white-space: nowrap; }
+.alt-table td .bullets, .ap-table td .bullets, .pair-row .bullets { display: inline-flex; vertical-align: -5px; margin-right: 4px; }
+.stay-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.stay-grid > div { background: var(--paper); border: 1px solid var(--rule); padding: 12px 14px 14px; }
+.stay-grid h3.label { margin: 0 0 6px; }
+.stay-grid .small { margin: 0 0 8px; }
+.hotel-list { list-style: none; margin: 0 0 10px; padding: 0; border-top: 2px solid var(--ink); }
+.hotel-list li { display: flex; flex-direction: column; gap: 1px; padding: 8px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.hotel-list a { text-decoration: none; }
+.hotel-list a:hover { text-decoration: underline; }
+.hotel-list .name { font-weight: 600; }
+.stay-grid p { margin: 6px 0 0; }
+
+/* ─── Airports ─── */
+.ap-head { background: var(--paper); border: 1px solid var(--rule); padding: 16px 18px 16px; margin-bottom: 16px; }
+.ap-head h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.015em; }
+.ap-head > .muted { margin: 0 0 12px; font-size: 13.5px; }
+.ap-head .trip { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.ap-head .trip .segmented { margin: 18px 0 0; }
+.airports .verdict { margin-bottom: 14px; }
+.airports .verdict h2 { margin: 4px 0 6px; font-size: 23px; line-height: 1.2; letter-spacing: -0.015em; }
+.ap-table th[scope='row'] { min-width: 150px; }
+.ap-table .price { display: block; }
+.airports > .tiny { margin: 8px 0 18px; }
+.ap-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; margin-bottom: 18px; }
+.ap-cols > section { background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; min-width: 0; }
+.ap-cols .small { margin: 0 0 8px; }
+.pair-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.pair-list li { display: flex; flex-direction: column; gap: 4px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 13.5px; }
+.pair { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 14px; }
+.pair-row { display: flex; gap: 6px; align-items: flex-start; }
+.pair-row .bullets { flex: none; margin-top: 1px; }
+.facts { margin: 0; }
+.facts > div { padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.facts > div:first-child { border-top: 2px solid var(--ink); }
+.facts dt { font-weight: 600; font-family: var(--mono); font-size: 14px; }
+.facts dt .muted { font-family: var(--sans); font-weight: 400; font-size: 13px; }
+.facts dd { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.facts dd .bullets { display: inline-flex; vertical-align: -5px; margin-right: 4px; }
+.small-airports { background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; }
+.small-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.small-list li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--rule); font-size: 13.5px; }
+.small-list b { font-family: var(--mono); }
+.small-list b .muted { font-family: var(--sans); font-weight: 400; }
 
 /* ─── Help a passenger ─── */
 .assist { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 18px; align-items: start; }
@@ -300,7 +379,9 @@ button, select, input { font: inherit; color: inherit; }
   @page { margin: 12mm; }
   body { background: #fff; }
   .top, .board, .foot, .no-print { display: none !important; }
-  .wrap.assist { display: block; padding: 0; max-width: none; }
+  .wrap.assist, .wrap.rebook { display: block; padding: 0; max-width: none; }
+  .rb-alt, .rb-stay { display: none; }
+  .rights { border: 0; border-top: 5px solid var(--navy); padding: 10px 0 0; }
   .handout { position: static; border: 0; border-top: 5px solid var(--navy); padding: 10px 0 0; }
   .handout-qr .url { color: var(--ink); }
 }
@@ -316,6 +397,8 @@ button, select, input { font: inherit; color: inherit; }
 /* ─── Narrow screens ─── */
 @media (max-width: 960px) {
   .assist { grid-template-columns: minmax(0, 1fr); }
+  .rebook { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'form' 'rights' 'alt' 'stay'; }
+  .ap-cols, .stay-grid { grid-template-columns: minmax(0, 1fr); }
   .handout { position: static; }
   .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'verdict' 'list' 'side'; }
   .side { position: static; }
@@ -345,6 +428,9 @@ button, select, input { font: inherit; color: inherit; }
   .cmp th[scope='row'] .sub { display: none !important; }
   .rowbtn { gap: 8px; }
   .map { height: 220px; }
-  .trip-fields { grid-template-columns: minmax(0, 1fr); }
+  .trip-fields, .rb-grid { grid-template-columns: minmax(0, 1fr); }
   .handout-qr { flex-direction: column; align-items: flex-start; }
+  .ap-head .trip { grid-template-columns: minmax(0, 1fr); }
+  .ap-head .trip .segmented { margin: 0; }
+  .rights h2, .airports .verdict h2 { font-size: 20px; }
 }
