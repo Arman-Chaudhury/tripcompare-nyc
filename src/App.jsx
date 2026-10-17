@@ -4,14 +4,14 @@ import { makeT, languages, detectLanguage } from './lib/i18n.js';
 import { useAlerts } from './hooks/useAlerts.js';
 import TransitTab from './tabs/TransitTab.jsx';
 import AssistTab from './tabs/AssistTab.jsx';
-import ComingSoonTab from './tabs/ComingSoonTab.jsx';
-import StatusBoard from './components/StatusBoard.jsx';
+import RebookTab from './tabs/RebookTab.jsx';
+import AirportsTab from './tabs/AirportsTab.jsx';
 
 const TABS = [
   { id: 'transit', key: 'tabTransit' },
   { id: 'assist', key: 'tabAssist' },
-  { id: 'rebook', key: 'tabRebook', soon: true },
-  { id: 'airports', key: 'tabAirports', soon: true },
+  { id: 'rebook', key: 'tabRebook' },
+  { id: 'airports', key: 'tabAirports' },
 ];
 // Trip state shared by the tabs and mirrored into the URL.
 const TRIP_KEYS = ['from', 'to', 'sort', 'need', 'party'];
@@ -56,7 +56,7 @@ export default function App() {
           <nav role="tablist" aria-label={t('appName')}>
             {TABS.map((x) => (
               <button key={x.id} type="button" role="tab" aria-selected={tab === x.id} className={tab === x.id ? 'on' : ''} onClick={() => setTab(x.id)}>
-                {t(x.key)}{x.soon && <span className="soon">{t('soon')}</span>}
+                {t(x.key)}
               </button>
             ))}
           </nav>
@@ -71,12 +71,8 @@ export default function App() {
 
       {tab === 'transit' && <TransitTab alerts={alerts} lang={lang} t={t} params={tripParams} setParams={setTripParams} />}
       {tab === 'assist' && <AssistTab alerts={alerts} lang={lang} t={t} params={tripParams} setParams={setTripParams} openTransit={openTransit} />}
-      {tab !== 'transit' && tab !== 'assist' && (
-        <>
-          <StatusBoard date={new Date()} lines={['E', 'A', 'LIRR']} alerts={alerts} lang={lang} t={t} />
-          <ComingSoonTab tab={tab} t={t} onBack={() => setTab('transit')} />
-        </>
-      )}
+      {tab === 'rebook' && <RebookTab alerts={alerts} lang={lang} t={t} openTransit={openTransit} />}
+      {tab === 'airports' && <AirportsTab alerts={alerts} lang={lang} t={t} params={tripParams} setParams={setTripParams} openTransit={openTransit} />}
 
       <footer className="foot">
         <p className="verified-line">{t('faresVerified', { date: FARES_LAST_VERIFIED })}</p>
