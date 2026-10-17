@@ -123,5 +123,62 @@ import { strings } from '../src/lib/i18n.js';
   }
 }
 
+// Canceled-flight rights card and Airports tab data.
+import { parseFlight, entitlements, AIRLINES, flightsLink } from '../src/lib/rebook.js';
+import { airportTransitLinks, AIRPORT_FACTS, SMALL_AIRPORTS } from '../src/data/airportFacts.js';
+import { hotels } from '../src/data/hotels.js';
+{
+  const status = (r, key) => r.items.find((i) => i.key === key)?.status ?? 'absent';
+  const before = new Date('2026-10-01T12:00:00-04:00'), after = new Date('2026-10-20T12:00:00-04:00');
+  if (parseFlight('dl 123')?.code !== 'DL' || parseFlight('B6-1234')?.number !== 1234 || parseFlight('hello') !== null || parseFlight('9W 12')?.code !== '9W') { fail++; console.log('FAIL parseFlight'); }
+  const dl = entitlements({ event: 'canceled', cause: 'airline', hours: 4, overnight: true, airline: AIRLINES.DL, date: before });
+  const want = { refund: 'yes', rebookSame: 'yes', rebookPartner: 'yes', meal: 'yes', hotel: 'yes', transport: 'yes', cashUS: 'no', credit: 'absent', eu261: 'absent' };
+  for (const [k, v] of Object.entries(want)) if (status(dl, k) !== v) { fail++; console.log(`FAIL DL controllable overnight: ${k} ${status(dl, k)} want ${v}`); }
+  if (dl.flags.includes('reclassified')) { fail++; console.log('FAIL reclassified flag before effective date'); }
+  if (!entitlements({ event: 'canceled', cause: 'airline', airline: AIRLINES.DL, date: after }).flags.includes('reclassified')) { fail++; console.log('FAIL reclassified flag after effective date'); }
+  const f9 = entitlements({ event: 'delayed', cause: 'airline', hours: 6, overnight: true, airline: AIRLINES.F9 });
+  if (status(f9, 'hotel') !== 'no' || status(f9, 'rebookPartner') !== 'no' || status(f9, 'meal') !== 'yes' || status(f9, 'refund') !== 'yes') { fail++; console.log('FAIL Frontier commitments', f9.items); }
+  const wx = entitlements({ event: 'delayed', cause: 'weather', hours: 8, overnight: true, airline: AIRLINES.UA });
+  if (status(wx, 'hotel') !== 'no' || status(wx, 'meal') !== 'no' || status(wx, 'rebookSame') !== 'maybe' || !wx.flags.includes('weatherInsurance')) { fail++; console.log('FAIL weather case', wx.items, wx.flags); }
+  if (status(entitlements({ event: 'delayed', cause: 'airline', hours: 2, airline: AIRLINES.UA }), 'refund') !== 'no') { fail++; console.log('FAIL 2h domestic delay is not significant'); }
+  if (status(entitlements({ event: 'delayed', cause: 'airline', hours: 4, intl: true, airline: AIRLINES.UA }), 'refund') !== 'no') { fail++; console.log('FAIL 4h international delay is not significant'); }
+  if (status(entitlements({ event: 'delayed', cause: 'airline', hours: 6, intl: true, airline: AIRLINES.UA }), 'refund') !== 'yes') { fail++; console.log('FAIL 6h international delay is significant'); }
+  const b6 = entitlements({ event: 'delayed', cause: 'airline', hours: 3, airline: AIRLINES.B6 });
+  if (status(b6, 'credit') !== 'yes' || status(b6, 'miles') !== 'absent') { fail++; console.log('FAIL JetBlue credit'); }
+  const af = entitlements({ event: 'canceled', cause: 'unknown', airline: AIRLINES.AF });
+  if (status(af, 'eu261') !== 'maybe' || !af.flags.includes('askCause')) { fail++; console.log('FAIL Air France EU261'); }
+  if (status(entitlements({ event: 'canceled', cause: 'weather', airline: AIRLINES.BA }), 'eu261') !== 'no') { fail++; console.log('FAIL BA weather EU261'); }
+  const bump = entitlements({ event: 'bumped', cause: 'airline', hours: 3, airline: null });
+  if (status(bump, 'bump') !== 'yes' || status(bump, 'refund') !== 'absent' || bump.items[0].vars.long !== '$2,150' || !bump.flags.includes('airlineUnknown')) { fail++; console.log('FAIL bumped case', bump); }
+  const ek = entitlements({ event: 'canceled', cause: 'airline', airline: AIRLINES.EK });
+  if (!ek.flags.includes('foreignNoDashboard') || status(ek, 'rebookSame') !== 'yes') { fail++; console.log('FAIL foreign carrier without dashboard'); }
+  // Every item the card can emit has its label and reason strings in every language.
+  const cases = [dl, f9, wx, b6, af, bump, ek, entitlements({ event: 'canceled', cause: 'airline', overnight: true, hours: 12, airline: AIRLINES.AS }), entitlements({ event: 'delayed', cause: 'unknown', hours: 4, overnight: true, airline: AIRLINES.AC })];
+  const keys = new Set();
+  for (const c of cases) for (const i of c.items) { keys.add(`right_${i.key}`); keys.add(`right_${i.key}_${i.status}`); }
+  for (const c of cases) for (const f of c.flags) keys.add(`flag_${f}`);
+  for (const [lang, table] of Object.entries(strings)) {
+    const missing = [...keys].filter((k) => !(k in table));
+    if (missing.length) { fail++; console.log(`FAIL ${lang} rights strings missing: ${missing.join(', ')}`); }
+  }
+  if (!flightsLink({ from: 'JFK', to: 'lax', date: '2026-10-17' }).includes(encodeURIComponent('Flights from JFK to LAX on 2026-10-17'))) { fail++; console.log('FAIL flightsLink'); }
+  // Airport-to-airport transit sums come from the verified fare table.
+  const tl = airportTransitLinks(offPromo);
+  eq('JFK–LGA transit = AirTrain + subway', tl['JFK-LGA'].cost, getFare('airtrain_jfk', offPromo) + getFare('subway', offPromo));
+  eq('EWR–LGA transit = subway + NJT', tl['EWR-LGA'].cost, getFare('subway', offPromo) + getFare('njt_ewr_penn', offPromo));
+  // Airport facts, hotel notes, and small-airport text all have translations.
+  const text = [];
+  for (const f of Object.values(AIRPORT_FACTS)) text.push(f.terminals, f.hubs, f.transitText, f.note);
+  for (const a of SMALL_AIRPORTS) text.push(a.where, a.transit);
+  for (const list of Object.values(hotels)) for (const h of list) { text.push(h.area); if (h.note) text.push(h.note); }
+  for (const l of Object.values(tl)) text.push(l.steps);
+  for (const lang of routeTextLanguages) {
+    const missing = text.filter((s) => !hasTranslation(lang, s));
+    if (missing.length) { fail++; console.log(`FAIL ${lang} airport/hotel text untranslated: ${missing.map((m) => JSON.stringify(m)).join(', ')}`); }
+    else console.log(`PASS ${lang} airport/hotel text covers all ${text.length} strings`);
+  }
+  for (const code of Object.keys(airports)) if (!hotels[code]?.length || !AIRPORT_FACTS[code]) { fail++; console.log(`FAIL missing hotels or facts for ${code}`); }
+}
+
 console.log(fail ? `\n${fail} failure(s)` : '\nAll sanity checks passed.');
 process.exit(fail ? 1 : 0);

@@ -16,8 +16,10 @@ It's a single-purpose PWA: no login, no backend, no tracking. Pick your airport,
 - **Route map** — a Leaflet/OpenStreetMap map above every comparison, styled the way navigation apps do it: the selected driving route in blue with a white casing, **alternate routes in gray** (up to three from OSRM, each labeled "via …" with distance and a modeled time range for the chosen departure), and transit itineraries dashed in their official line colors. Pick a route and every car mode's cost and time re-computes from that route's distance. A/B pins; tap a row, card, chip, or line to highlight. Tiles and routes are cached for offline.
 - **Live traffic** — a toggle embeds Waze's live traffic map for the trip area (jams, incidents, closures), plus one-tap **Open in Waze / Apple Maps / Google Maps** links for a live, traffic-aware ETA. The app's own time ranges use the time-of-day model, not live flow — Waze, Apple, and Google don't expose traffic data to third-party sites without paid keys, and the app never pretends otherwise.
 - **Address search that handles NYC** — NYC Planning Labs GeoSearch (the city's own address data) is the primary geocoder, so Queens hyphenated numbers like `41-11 95 St`, intersections, and landmarks resolve on the first try; OpenStreetMap Nominatim covers NJ and beyond. 220 ms debounce, recent places, keyboard navigation, and a "use my location" button.
-- **Transit-board layout** — a navy tab bar (Getting there · Help a passenger · Canceled flight · Airports; the last two are marked *soon*), a departure-board status strip with the New York clock and live MTA status for the lines on your trip, and one route bar for from/to, departure time, weather, and what your time is worth.
+- **Transit-board layout** — a navy tab bar (Getting there · Help a passenger · Canceled flight · Airports), a departure-board status strip with the New York clock and live MTA status for the lines on your trip, and one route bar for from/to, departure time, weather, and what your time is worth.
 - **Help a passenger** — a one-screen view for the information desk. Pick what the traveler needs (cheapest, fastest, lots of luggage, traveling as a group, wheelchair / limited mobility), pick the airport and direction (remembered between shifts) and the other end of the trip, and choose the handout language. The right side is a printable handout: the one-sentence answer, the top three options with cost and time, the key tip, and a QR code that opens the full comparison on the passenger's phone with the same filter and language. Group totals multiply per-seat fares by the party and cabs by how many 4-seat cars the party needs; luggage and mobility drop bikes and add elevator / accessible-taxi notes. The link carries `sort`, `need`, and `party`, so Getting there reproduces the staff member's answer and shows a clearable filter chip.
+- **Canceled flight** — for the traveler whose flight just fell apart and whose airline is not helping. Pick what happened (canceled, delayed, bumped), the cause the airline gave, how long the wait is, and optionally the flight number. The rights card then says, line by line, what the airline owes under the US DOT refund rule, the DOT Airline Customer Service Dashboard commitments of that specific airline (American, Alaska, JetBlue, Delta, Frontier, Allegiant, Hawaiian, Spirit, United, Southwest), the involuntary-bumping rule, and EU 261 / UK 261 / Canada APPR for foreign carriers, each marked yes / maybe / no with a one-line reason. It also carries the 2026-10-19 DOT reclassification of ten delay causes as a dated caveat, a script to say at the counter, a do-now checklist, flight-search links for the same route from JFK, LGA, and EWR with the ride to each other airport priced by the engine, and a hotel list per airport (shuttle, distance, map link, live-price link) next to the ride into Manhattan right now. No flight-status feed: the passenger already knows what happened, and no free feed exists without a backend.
+- **Airports** — which NYC airport to fly into or out of for a given destination: the engine runs for JFK, LGA, and EWR at once and shows the cheapest, fastest, and best-transit option from each, with a verdict line and a tap-through to the full comparison. Below it: airport-to-airport costs (metered cab from the engine, transit from the verified fare table), terminal / airline / transit facts for each field, and the four smaller airports (HPN, ISP, SWF, HVN) with how to reach them by rail.
 - **One-sentence answer first** — "AirTrain + LIRR to Penn Station. $14, about 54 min." plus the trade-off against the fastest and cheapest options, computed from the ranked results.
 - **Comparison table** — one row per mode with official-style line bullets, cost (stamped *verified* or *estimate*), time, **cost per minute**, and a *good to know* column (live alert, warning, exact-price link, or top tip). Warnings shared by most rows (JFK construction) appear once above the table. Tap a row for steps, full cost breakdown, time-value math, and commuter projection.
 - **"Leaving now" by default** (device clock), or pick a day and time. This drives LIRR peak/off-peak pricing, the taxi rush-hour and night surcharges, the traffic model, overnight-service warnings, and promo windows.
@@ -81,6 +83,9 @@ Passengers ask for live prices. Here is exactly what's live and what isn't, and 
 | Travel times | **Modeled ranges** | Free-flow drive time (OSRM route duration, or curated values) × time-of-day traffic multiplier; transit times are published-schedule ranges including typical waits. Never a single number. |
 | Live traffic | **Live, via Waze embed + nav-app links** | Waze's public live map is embedded for the trip area so you can see jams right now; for a live ETA the trip opens in Waze / Apple Maps / Google Maps. There is no free programmatic traffic feed to fold into the model. |
 
+| Passenger rights | **Verified-static** | Written from the DOT refund rule, the DOT Airline Customer Service Dashboard, 14 CFR 250, EU 261, and Canada's APPR, with a checked date on the card and links to the sources. Dashboard commitments are per airline and change; the date says when they were last compared. |
+| Hotels near airports | **Static list, live-price link** | Names, distance, and advertised shuttle; prices open a live search. |
+
 Badges on every card: **Verified fare** (green), **Estimate** (amber), **Live alert** (red).
 
 ## Tech stack
@@ -141,10 +146,13 @@ src/
   lib/timeValue.js       $/hr-saved metric, sorting, commuter projection
   lib/alerts.js          MTA GTFS-RT alerts fetch/parse/cache, per-line status
   lib/assist.js          passenger needs → filter/sort/group scaling, URL contract for the handout link
+  lib/rebook.js          passenger rights: DOT refund rule, dashboard commitments per airline, bumping, EU261/APPR; flight-number parsing; search links
+  data/hotels.js         hotels near each airport (shuttle, distance), no live prices
+  data/airportFacts.js   terminals, hubs, transit per airport; smaller airports; airport-to-airport transit from the fare table
   lib/i18n.js            en + es + zh UI strings, locale helpers
   lib/routeText.js       translates engine output (names, steps, tips, warnings, labels) via data/routeText/{es,zh}.js
   components/            StatusBoard, RouteBar + PlacePicker, Verdict, CompareTable, ResultCard, RouteMap, ShareQR
-  tabs/                  TransitTab (Getting there), AssistTab (Help a passenger), ComingSoonTab
+  tabs/                  TransitTab (Getting there), AssistTab (Help a passenger), RebookTab (Canceled flight), AirportsTab (Airports)
 scripts/sanity.mjs       route-math checks (npm run check)
 ```
 
@@ -182,7 +190,8 @@ Notes: NYC Ferry is in the fare table but no ferry serves an airport directly, s
 - **Weather from an API** instead of a manual toggle.
 - **Cross-street search** ("23rd St & 8th Ave") — neither free geocoder resolves intersections today; NYC's Geoclient API does but needs a key.
 - **Self-hosted routing** (OSRM/Valhalla) and transit geometry from GTFS shapes so transit lines follow the actual tracks instead of station-to-station segments.
-- **Canceled flight and Airports tabs** — need a flight-status source; the passenger-rights summary can be written from DOT rules without one.
+- **Flight status and alternative flights**: the Canceled flight tab works from what the passenger tells it and links out to Google Flights. A flight-status source (AeroDataBox) and a flight-search source would need API keys, so they wait for a small Cloudflare Worker that holds the keys and caches responses.
+- **Hotel prices**: no free hotel-rate API exists; the hotel list links to a live search instead of guessing a number.
 - **React Native** if usage justifies a native app; the data and model layers are plain JS and would port unchanged.
 
 ## Disclaimer
